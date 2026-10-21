@@ -1,6 +1,7 @@
 /api.trace
 .vs/
 /external/boost-build
+/build-ps4/
 .idea/
 cmake-build-*/
 .vs
