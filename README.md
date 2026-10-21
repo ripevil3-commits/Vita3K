@@ -12,6 +12,16 @@ Vita3K is an experimental PlayStation Vita emulator for Windows, Linux, macOS an
 * [Wiki](https://github.com/Vita3K/Vita3K/wiki) (information for developers)
 * [Discord server](https://discord.gg/MaWhJVH) (recommended)
 
+## Experimental PS4 port
+
+An experimental PS4 homebrew prototype is being developed on the separate branch
+[`ps4-port-prototype-2026-10-21`](https://github.com/ripevil3-commits/Vita3K/tree/ps4-port-prototype-2026-10-21).
+See [docs/PS4_BUILD.md](docs/PS4_BUILD.md) for the required cross-toolchain, SDL3, and RADV/VideoOut WSI setup.
+
+This is **not a working PS4 emulator release**: the native entry point and platform/WSI changes are not yet
+verified by an end-to-end Vita3K build or a real-console launch. The regular desktop and Android targets remain
+the default when `VITA3K_PS4=OFF`.
+
 ## Compatibility
 
 The emulator currently runs most homebrew programs and commercial games.
