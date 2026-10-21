@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.22)
 
+option(VITA3K_PS4 "Enable the experimental native PS4 homebrew build path" OFF)
+if(VITA3K_PS4 AND CMAKE_SYSTEM_NAME STREQUAL "Android")
+    message(FATAL_ERROR "VITA3K_PS4 cannot be combined with the Android build.")
+endif()
+if(VITA3K_PS4)
+    # Cross builds must use dependencies built for the PS4 ABI. Do not enable optional
+    # desktop services or IPO until the PS4 linker/runtime path is stable.
+    set(USE_DISCORD_RICH_PRESENCE OFF CACHE BOOL "Discord Rich Presence is unsupported on PS4" FORCE)
+    set(USE_LTO NEVER CACHE STRING "Disable LTO for the experimental PS4 target" FORCE)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "PS4 homebrew uses static libraries" FORCE)
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Android")
 	set(ANDROID 1)
 	set(VCPKG_TARGET_ANDROID 1)
@@ -8,6 +20,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Android")
 endif()
 
 project(Vita3K)
+
+if(VITA3K_PS4)
+    add_compile_definitions(VITA3K_PS4=1)
+    message(STATUS "Vita3K PS4 port is experimental; a PS4 sysroot, PS4-built dependencies, and a compatible RADV/VideoOut WSI are required.")
+endif()
 
 # Detects the amount of processors of the host machine and forwards the result to CPU_COUNT
 include(ProcessorCount)
