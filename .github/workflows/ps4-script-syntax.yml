@@ -1,0 +1,25 @@
+name: Check PS4 build script syntax
+
+on:
+  push:
+    branches:
+      - ps4-port-prototype-2026-10-21
+    paths:
+      - "scripts/build-ps4.sh"
+      - ".github/workflows/ps4-script-syntax.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bash-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Parse packaging script
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/build-ps4.sh
