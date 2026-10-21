@@ -306,4 +306,8 @@ endif()
 
 add_subdirectory(external)
 add_subdirectory(vita3k)
-add_subdirectory(tools/gen-modules)
+# gen-modules is a host-side executable used by the desktop development workflow;
+# do not cross-compile it into a PS4 ELF.
+if(NOT VITA3K_PS4)
+	add_subdirectory(tools/gen-modules)
+endif()
