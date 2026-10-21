@@ -401,7 +401,9 @@ int Camera::close() {
 int Camera::stop() {
     this->is_started = false;
     pImpl->frame.reset();
+#ifndef VITA3K_PS4
     pImpl->sdl_camera.reset();
+#endif
     return 0;
 }
 
@@ -433,9 +435,23 @@ void CameraState::deinit() {
     active_camera = SCE_CAMERA_DEVICE_UNKNOWN;
 }
 
+#ifndef VITA3K_PS4
 BOOST_DESCRIBE_ENUM(SDL_CameraPosition, SDL_CAMERA_POSITION_UNKNOWN, SDL_CAMERA_POSITION_FRONT_FACING, SDL_CAMERA_POSITION_BACK_FACING)
+#endif
 
 void init_default_cameras(Config &cfg) {
+#ifdef VITA3K_PS4
+    // The initial PS4 SDL3 build deliberately disables SDL camera support.
+    // Keep the emulator's deterministic generated-camera fallback for both Vita camera devices.
+    if (cfg.front_camera_type == WebCamera) {
+        cfg.front_camera_type = SolidColor;
+        cfg.front_camera_id.clear();
+    }
+    if (cfg.back_camera_type == WebCamera) {
+        cfg.back_camera_type = SolidColor;
+        cfg.back_camera_id.clear();
+    }
+#else
     if (!((cfg.front_camera_type == WebCamera && cfg.front_camera_id.empty()) || (cfg.back_camera_type == WebCamera && cfg.back_camera_id.empty())))
         return;
     LOG_DEBUG("Initialize default cameras...");
@@ -466,4 +482,5 @@ void init_default_cameras(Config &cfg) {
         cfg.front_camera_type = SolidColor;
         cfg.back_camera_type = SolidColor;
     }
+#endif
 }
