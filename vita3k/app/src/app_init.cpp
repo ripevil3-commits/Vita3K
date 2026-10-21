@@ -257,7 +257,7 @@ bool init_paths(Root &root_paths) {
     root_paths.set_shared_path(internal_storage_path);
     root_paths.set_cache_path(internal_storage_path / "cache" / "");
     root_paths.set_patch_path(internal_storage_path / "patch" / "");
-#elif defined(__ORBIS__)
+#elif defined(__ORBIS__) || defined(VITA3K_PS4)
     // PS4 homebrew has no desktop HOME/XDG paths. Keep all writable data under /data,
     // while the immutable assets are packaged under /app0/data by the PKG stage.
     const fs::path data_path = "/data/Vita3K";
