@@ -61,6 +61,10 @@ private:
 
     SDL_Window *window = nullptr;
     SDL_GLContext *gl_context = nullptr;
+#else
+private:
+    mutable int width = 1920;
+    mutable int height = 1080;
 #endif
 };
 
