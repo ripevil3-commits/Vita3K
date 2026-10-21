@@ -193,6 +193,14 @@ macro(get_boost)
 			find_package(Boost 1.81 COMPONENTS ${BOOST_MODULES_TO_FIND} QUIET)
 		endif()
 
+		# Cross builds must not silently compile a host-ABI Boost library.
+		if (NOT Boost_FOUND AND VITA3K_PS4)
+			message(FATAL_ERROR
+				"VITA3K_PS4 requires a PS4-cross-compiled Boost.Filesystem library. "
+				"Set Boost_ROOT/Boost_DIR or CMAKE_PREFIX_PATH to the PS4 sysroot package; "
+				"the normal host Boost fallback is not safe for a cross build.")
+		endif()
+
 		# If system Boost hasn't been found, then enable hints to find custom Boost
 		if (NOT Boost_FOUND)
 			message(STATUS "A Boost distribution that meets the requirements needed for the project hasn't been found in your system. Falling back to custom Boost distribution...")
