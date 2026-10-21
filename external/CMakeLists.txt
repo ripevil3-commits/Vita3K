@@ -80,30 +80,39 @@ add_subdirectory(libfat16)
 add_library(miniz STATIC miniz/miniz.c miniz/miniz.h)
 target_include_directories(miniz PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/miniz")
 
-add_subdirectory(sdl)
+# On PS4, use an SDL3 installation cross-built for the OpenOrbis ABI.
+# That build supplies the console audio/gamepad drivers and disables desktop video.
+if(VITA3K_PS4)
+	find_package(SDL3 CONFIG REQUIRED)
+else()
+	add_subdirectory(sdl)
+endif()
 
-# Cubeb setup, from https://github.com/RPCS3/rpcs3/blob/master/3rdparty/cubeb/CMakeLists.txt
-set(BUILD_SHARED_LIBS FALSE CACHE BOOL "Don't build shared libs")
-set(BUILD_TESTS FALSE CACHE BOOL "Don't build tests")
-set(BUILD_RUST_LIBS FALSE CACHE BOOL "Don't build rust libs")
-set(BUILD_TOOLS FALSE CACHE BOOL "Don't build tools")
-set(BUNDLE_SPEEX TRUE CACHE BOOL "Bundle the speex library")
-set(LAZY_LOAD_LIBS TRUE CACHE BOOL "Lazily load shared libraries")
-set(USE_SANITIZERS FALSE CACHE BOOL "Dont't use sanitizers")
+# Cubeb currently has no wired PS4 output backend in this port. The PS4 target
+# starts with Vita3K's SDL3 audio adapter and must not build a host cubeb backend.
+if(NOT VITA3K_PS4)
+	# Cubeb setup, from https://github.com/RPCS3/rpcs3/blob/master/3rdparty/cubeb/CMakeLists.txt
+	set(BUILD_SHARED_LIBS FALSE CACHE BOOL "Build shared libs")
+	set(BUILD_TESTS FALSE CACHE BOOL "Build tests")
+	set(BUILD_RUST_LIBS FALSE CACHE BOOL "Build rust libs")
+	set(BUILD_TOOLS FALSE CACHE BOOL "Build tools")
+	set(BUNDLE_SPEEX TRUE CACHE BOOL "Bundle the speex library")
+	set(LAZY_LOAD_LIBS TRUE CACHE BOOL "Lazily load shared libraries")
+	set(USE_SANITIZERS FALSE CACHE BOOL "Dont't use sanitizers")
 
-add_subdirectory(cubeb EXCLUDE_FROM_ALL)
+	add_subdirectory(cubeb EXCLUDE_FROM_ALL)
 
-if (ARCHITECTURE STREQUAL "arm64")
-	target_compile_definitions(speex PUBLIC
-		#_USE_NEON
-	)
-elseif (ARCHITECTURE STREQUAL "x86_64")
-	target_compile_definitions(speex PUBLIC
-		_USE_SSE
-		_USE_SSE2
-	)
-endif ()
-
+	if (ARCHITECTURE STREQUAL "arm64")
+		target_compile_definitions(speex PUBLIC
+			#_USE_NEON
+		)
+	elseif (ARCHITECTURE STREQUAL "x86_64")
+		target_compile_definitions(speex PUBLIC
+			_USE_SSE
+			_USE_SSE2
+		)
+	endif ()
+endif()
 if(ANDROID)
 	if(ARCHITECTURE STREQUAL "arm64")
 		add_subdirectory(libadrenotools)
