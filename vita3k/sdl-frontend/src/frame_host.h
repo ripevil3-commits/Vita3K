@@ -19,7 +19,11 @@
 
 #include <renderer/frame_host.h>
 
+#ifndef VITA3K_PS4
 #include <SDL3/SDL_video.h>
+#else
+struct SDL_Window;
+#endif
 
 #include <utility>
 
@@ -28,7 +32,11 @@ namespace sdl_frontend {
 // Lets the renderer draw in an SDL window: Vulkan surfaces from SDL, or its OpenGL context
 class FrameHost final : public renderer::FrameHost, public renderer::VulkanSurfaceProvider {
 public:
+#ifdef VITA3K_PS4
+    FrameHost();
+#else
     FrameHost(SDL_Window *window, SDL_GLContext *gl_context);
+#endif
 
     renderer::DisplayHandle handle() const override;
     const renderer::VulkanSurfaceProvider *vulkan_surface_provider() const override;
@@ -46,12 +54,14 @@ public:
     void prepare_for_render_thread() override;
     void destroy_render_context() override;
 
+#ifndef VITA3K_PS4
 private:
     // The window size in pixels, or 0x0 while Android has no surface to draw on
     std::pair<int, int> drawable_size() const;
 
     SDL_Window *window = nullptr;
     SDL_GLContext *gl_context = nullptr;
+#endif
 };
 
 } // namespace sdl_frontend
