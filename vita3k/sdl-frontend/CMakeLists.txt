@@ -1,8 +1,14 @@
+if(VITA3K_PS4)
+	set(SDL_FRONTEND_FRAME_HOST_SOURCE src/frame_host_ps4.cpp)
+else()
+	set(SDL_FRONTEND_FRAME_HOST_SOURCE src/frame_host.cpp)
+endif()
+
 add_library(
 	sdl-frontend
 	STATIC
 	include/sdl-frontend/session.h
-	src/frame_host.cpp
+	${SDL_FRONTEND_FRAME_HOST_SOURCE}
 	src/frame_host.h
 	src/session.cpp
 )
