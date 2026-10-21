@@ -361,12 +361,14 @@ int run(EmuEnvState &emuenv, app::AppSessionController &session, AppLaunchReques
                     handle_touchpad_event(emuenv.touch, event.gtouchpad);
                     break;
 
+#ifndef VITA3K_PS4
                 case SDL_EVENT_GAMEPAD_SENSOR_UPDATE:
                     handle_motion_event(emuenv, event.gsensor.sensor, event.gsensor);
                     break;
                 case SDL_EVENT_SENSOR_UPDATE:
                     handle_motion_event(emuenv, SDL_GetSensorTypeForID(event.sensor.which), event.sensor);
                     break;
+#endif
 
                 default:
                     break;
