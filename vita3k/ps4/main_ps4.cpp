@@ -17,6 +17,8 @@
 #include <util/log.h>
 
 #include <cstdio>
+#include <fstream>
+#include <string>
 
 int main(int argc, char **argv) {
     setvbuf(stdout, nullptr, _IONBF, 0);
@@ -43,11 +45,25 @@ int main(int argc, char **argv) {
     // and require an installed title ID; library browsing and the PS4 Vulkan WSI are separate
     // integration tasks. Never pretend this shell is a working emulator before they are tested.
     cfg.frontend = Frontend::sdl;
+    cfg.backend_renderer = "Vulkan";
+    cfg.audio_backend = "SDL";
     cfg.current_config.backend_renderer = "Vulkan";
+    cfg.current_config.audio_backend = "SDL";
+
+    // PS4 application launches generally cannot pass arbitrary desktop CLI arguments. Until a
+    // native library browser/package installer exists, a user can put one installed title ID
+    // (for example PCSA00000) in /data/Vita3K/config/launch_app.txt.
+    if (!cfg.run_app_path || cfg.run_app_path->empty()) {
+        const auto launch_file_path = root_paths.get_config_path() / "launch_app.txt";
+        std::ifstream launch_file(launch_file_path.c_str());
+        std::string installed_title_id;
+        if (launch_file && std::getline(launch_file, installed_title_id) && !installed_title_id.empty())
+            cfg.run_app_path = installed_title_id;
+    }
 
     if (!cfg.run_app_path || cfg.run_app_path->empty()) {
-        LOG_ERROR("PS4 prototype currently needs an installed title path (the -r/--installed-path argument).");
-        LOG_ERROR("A native PS4 library browser and package installer are not connected yet.");
+        LOG_ERROR("No title selected. Add an installed title ID to /data/Vita3K/config/launch_app.txt.");
+        LOG_ERROR("The native PS4 library browser and package installer are not connected yet.");
         return 2;
     }
 
