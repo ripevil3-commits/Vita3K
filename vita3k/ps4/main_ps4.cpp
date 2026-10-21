@@ -26,7 +26,13 @@ int main(int argc, char **argv) {
 
     Root root_paths;
     const bool portable = app::init_paths(root_paths);
+    // All Vita3K writable data stays under /data/Vita3K on PS4. Create each root before
+    // logging/config code opens files there; /app0 remains the read-only package root.
     fs::create_directories(root_paths.get_vita_fs_path());
+    fs::create_directories(root_paths.get_log_path());
+    fs::create_directories(root_paths.get_config_path());
+    fs::create_directories(root_paths.get_shared_path());
+    fs::create_directories(root_paths.get_cache_path());
 
     if (logging::init(root_paths, true) != Success) {
         std::printf("[Vita3K-PS4] failed to initialize logging\n");
