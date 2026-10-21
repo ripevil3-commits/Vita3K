@@ -126,6 +126,7 @@ void handle_ime_text_input(EmuEnvState &emuenv, const Hooks &hooks, const char *
     notify_ime_changed(hooks);
 }
 
+#ifndef VITA3K_PS4
 // Sets the attributes of the OpenGL context the renderer needs. Returns false if SDL refused one.
 bool set_gl_attributes() {
 #ifdef __ANDROID__
@@ -144,6 +145,7 @@ bool set_gl_attributes() {
 #endif
     return true;
 }
+#endif
 
 } // namespace
 
@@ -155,8 +157,12 @@ int run(EmuEnvState &emuenv, app::AppSessionController &session, AppLaunchReques
         relaunch_requested = false;
 
         SDL_Window *window = nullptr;
+#ifndef VITA3K_PS4
         SDL_GLContext gl_context = nullptr;
         FrameHost frame_host(nullptr, &gl_context);
+#else
+        FrameHost frame_host;
+#endif
         std::optional<AppLaunchRequest> pending_launch_request;
 
         const auto cleanup_launch = [&](const app::AppSessionStopReason reason) {
@@ -167,17 +173,24 @@ int run(EmuEnvState &emuenv, app::AppSessionController &session, AppLaunchReques
 
             if (hooks.on_window)
                 hooks.on_window(nullptr);
+#ifndef VITA3K_PS4
             if (window) {
                 SDL_DestroyWindow(window);
                 window = nullptr;
             }
-
+#endif
             SDL_Quit();
         };
 
         LOG_INFO("Booting game '{}'", launch_request.app_path);
 
+#ifdef VITA3K_PS4
+        // The PS4 SDL3 build is configured without video/camera/sensor APIs; VideoOut is owned
+        // by FrameHost's RADV display-surface provider, and ScePad arrives as SDL gamepad events.
+        if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
+#else
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC | SDL_INIT_SENSOR | SDL_INIT_CAMERA)) {
+#endif
             LOG_ERROR("SDL_Init failed: {}", SDL_GetError());
             exit_code = -1;
             cleanup_launch(app::AppSessionStopReason::LaunchFailure);
@@ -197,6 +210,7 @@ int run(EmuEnvState &emuenv, app::AppSessionController &session, AppLaunchReques
         if (hooks.on_launch)
             hooks.on_launch(launch_request.app_path);
 
+#ifndef VITA3K_PS4
         SDL_WindowFlags window_flags = 0;
 #ifndef __ANDROID__
         window_flags |= SDL_WINDOW_RESIZABLE;
@@ -259,6 +273,16 @@ int run(EmuEnvState &emuenv, app::AppSessionController &session, AppLaunchReques
             if (!SDL_GL_SetSwapInterval(static_cast<int>(emuenv.cfg.current_config.v_sync)))
                 LOG_WARN("Failed to set OpenGL swap interval: {}", SDL_GetError());
         }
+#else
+        if (emuenv.backend_renderer != renderer::Backend::Vulkan) {
+            LOG_ERROR("The PS4 frontend currently supports only the Vulkan renderer.");
+            exit_code = -1;
+            cleanup_launch(app::AppSessionStopReason::LaunchFailure);
+            break;
+        }
+        // No SDL_Window exists on PS4. The PS4 FrameHost creates a Vulkan display surface directly
+        // through the configured RADV/VideoOut WSI and presents using the PS4 swapchain path.
+#endif
 
         if (!session.initialize_renderer(frame_host)) {
             LOG_ERROR("Failed to initialise renderer.");
