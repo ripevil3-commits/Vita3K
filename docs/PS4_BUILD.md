@@ -22,6 +22,23 @@ A stock OpenOrbis install is sufficient for the tiny standalone smoke app in the
 
 The reference toolchain layout follows the pattern in [xemu-ps4's PS4 CMake wrapper](https://github.com/iHaiDeeZ/xemu-ps4/blob/main/toolchain/ps4-wrapper.cmake). The WSI interface is informed by [PS4SX2's PS4 Vulkan WSI](https://github.com/iHaiDeeZ/PS4SX2/blob/main/ps4/ps4_vk_wsi.cpp). Neither file is a drop-in replacement for the dependencies/runtime expected by the other codebase.
 
+## Build and package driver
+
+After preparing all dependencies and selecting a WSI source/runtime library set, the script can drive CMake, compile the `vita3k` target, convert the output ELF to `eboot.bin`, stage the assets and generate a local PKG:
+
+```sh
+export OO_PS4_TOOLCHAIN=/path/to/OpenOrbis-PS4-Toolchain
+export PS4_TOOLCHAIN_BIN="$HOME/xemups4/toolchain/bin"
+export PS4_SYSROOT="$HOME/xemups4-build/sysroot"
+export VITA3K_PS4_WSI_SOURCE=/absolute/path/to/ps4_vk_wsi.cpp
+export VITA3K_PS4_RUNTIME_INCLUDE_DIRS=/absolute/path/to/ps4-runtime/include
+export VITA3K_PS4_RUNTIME_LIBRARIES="semicolon;separated;PS4;library;names"
+
+bash scripts/build-ps4.sh
+```
+
+The script writes its intermediate build and stage directories under `build-ps4/`, and writes `Vita3K-PS4-Prototype-v00.01.pkg` into `out/`. Use actual paths and the matching local runtime's library names; the example variables are placeholders, not a known working configuration. The generated package includes standard module files copied from the local OpenOrbis samples and must not be redistributed unless their licenses permit it.
+
 ## Configure example
 
 Prepare the cross-compiled dependencies and WSI first. Then run from Linux/WSL with a matching toolchain:
