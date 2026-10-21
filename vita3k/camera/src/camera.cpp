@@ -35,9 +35,11 @@ struct SDL_SurfaceDeleter {
     void operator()(SDL_Surface *s) const { SDL_DestroySurface(s); }
 };
 
+#ifndef VITA3K_PS4
 struct SDL_CameraDeleter {
     void operator()(SDL_Camera *c) const { SDL_CloseCamera(c); }
 };
+#endif
 
 struct SDL_Deleter {
     void operator()(void *c) const { SDL_free(c); }
@@ -45,13 +47,17 @@ struct SDL_Deleter {
 
 using SDL_SurfacePtr = std::unique_ptr<SDL_Surface, SDL_SurfaceDeleter>;
 using stbi_uc_ptr = std::unique_ptr<stbi_uc, stbi_deleter>;
+#ifndef VITA3K_PS4
 using SDL_CameraPtr = std::unique_ptr<SDL_Camera, SDL_CameraDeleter>;
 using SDL_CameraListPtr = std::unique_ptr<SDL_CameraID[], SDL_Deleter>;
+#endif
 
 class Camera::CameraImpl {
 public:
+#ifndef VITA3K_PS4
     SDL_CameraPtr sdl_camera;
     SDL_CameraID device_id;
+#endif
     SDL_SurfacePtr frame;
     SDL_PixelFormat format;
     SDL_Colorspace colorspace;
@@ -62,6 +68,7 @@ Camera::Camera()
     : pImpl(std::make_unique<CameraImpl>()) {}
 Camera::~Camera() = default;
 
+#ifndef VITA3K_PS4
 static bool init_web_camera(Camera *self) {
     // open web camera via SDL3
     int num_cameras;
@@ -107,6 +114,7 @@ static bool init_web_camera(Camera *self) {
     }
     return true;
 }
+#endif
 
 static bool init_image(Camera *self) {
     FILE *f = FOPEN(fs_utils::utf8_to_path(self->image).c_str(), "rb");
@@ -178,12 +186,21 @@ static bool init_solid_color(Camera *self) {
 static void refresh_camera_image(Camera *self) {
     const std::lock_guard lock(self->pImpl->frame_mutex);
 
+#ifndef VITA3K_PS4
     self->pImpl->sdl_camera.reset();
+#else
+    // The current PS4 SDL3 build has no camera API. Emulate the camera with an image
+    // or the generated solid-color fallback until a native SceCamera adapter is implemented.
+    if (self->type == CameraType::WebCamera)
+        self->type = CameraType::SolidColor;
+#endif
     self->pImpl->frame.reset();
+#ifndef VITA3K_PS4
     if (self->type == CameraType::WebCamera) {
         if (!init_web_camera(self))
             self->type = CameraType::Image;
     }
+#endif
     if (self->type == CameraType::Image) {
         if (!init_image(self))
             self->type = CameraType::SolidColor;
@@ -293,6 +310,7 @@ int Camera::read(SceCameraRead *read, void *pIBase, void *pUBase, void *pVBase, 
     // next frame
     last_frame_timestamp_us = next_frame_timestamp_us;
     next_frame_timestamp_us = next_frame_timestamp_us + frame_interval_us;
+#ifndef VITA3K_PS4
     if (type == CameraType::WebCamera) {
         Uint64 timestampNS = 0;
         auto surface = SDL_AcquireCameraFrame(pImpl->sdl_camera.get(), &timestampNS);
@@ -317,6 +335,7 @@ int Camera::read(SceCameraRead *read, void *pIBase, void *pUBase, void *pVBase, 
             last_frame_timestamp_us = timestampNS / SDL_NS_PER_US + tick_diff_us;
         }
     }
+#endif
     read->frame = frame_idx++;
     read->status = SCE_CAMERA_STATUS_IS_ACTIVE;
     read->timestamp = last_frame_timestamp_us;
